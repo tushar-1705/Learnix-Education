@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import API from "../../api/axiosConfig";
+import { getImageUrl } from "../../api/apiConfig";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import { useSidebar } from "../../context/SidebarContext";
@@ -18,7 +19,6 @@ const AdminStudentHelp = () => {
   const [replyInputs, setReplyInputs] = useState({});
   const [submittingReply, setSubmittingReply] = useState({});
   const [openReplyForms, setOpenReplyForms] = useState({});
-  const API_BASE_URL = "http://localhost:8082/api";
 
   const fetchHelpRequests = useCallback(async (search = "", status = statusFilter) => {
     setLoading(true);
@@ -248,7 +248,7 @@ const AdminStudentHelp = () => {
                       <div className="flex items-start gap-4 flex-1">
                         {request.student?.profilePhoto ? (
                           <img
-                            src={`${API_BASE_URL}/uploads/${request.student.profilePhoto}`}
+                            src={getImageUrl(request.student.profilePhoto)}
                             alt={request.student.name}
                             className="w-12 h-12 rounded-full object-cover"
                           />

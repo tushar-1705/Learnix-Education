@@ -4,13 +4,13 @@ import { useAuth } from "../context/AuthContext";
 import { useSidebar } from "../context/SidebarContext";
 import { HiUserCircle, HiQuestionMarkCircle, HiBell } from "react-icons/hi";
 import API from "../api/axiosConfig";
+import { getImageUrl } from "../api/apiConfig";
 import logo from "../assets/Learnix_Logo.png";
 
 const Navbar = () => {
   const { user } = useAuth();
   const { toggleSidebar } = useSidebar();
   const navigate = useNavigate();
-  const API_BASE_URL = "http://localhost:8082/api";
 
   const [notifications, setNotifications] = useState([]);
 
@@ -130,9 +130,7 @@ const Navbar = () => {
           >
             {user.profilePhoto ? (
               <img
-                src={user.profilePhoto.startsWith('http://') || user.profilePhoto.startsWith('https://') 
-                  ? user.profilePhoto 
-                  : `${API_BASE_URL}/uploads/${user.profilePhoto}`}
+                src={getImageUrl(user.profilePhoto)}
                 alt={user.name}
                 className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-blue-500 shadow-md"
                 onError={(e) => {

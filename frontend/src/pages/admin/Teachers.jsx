@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import API from "../../api/axiosConfig";
+import { getImageUrl } from "../../api/apiConfig";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import { useSidebar } from "../../context/SidebarContext";
@@ -23,7 +24,6 @@ const Teachers = () => {
   const [teacherSubjects, setTeacherSubjects] = useState([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const API_BASE_URL = "http://localhost:8082/api";
 
   // Form for adding teacher
   const {
@@ -284,7 +284,7 @@ const Teachers = () => {
                             <div className="flex items-center gap-2 sm:gap-3">
                               {teacher.profilePhoto ? (
                                 <img
-                                  src={`${API_BASE_URL}/uploads/${teacher.profilePhoto}`}
+                                  src={getImageUrl(teacher.profilePhoto)}
                                   alt={teacher.name}
                                   className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
                                 />

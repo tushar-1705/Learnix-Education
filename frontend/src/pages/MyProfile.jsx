@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../context/AuthContext";
 import API from "../api/axiosConfig";
+import { getImageUrl } from "../api/apiConfig";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { useSidebar } from "../context/SidebarContext";
@@ -29,8 +30,6 @@ const MyProfile = () => {
   
   const formValues = watch();
 
-  const API_BASE_URL = "http://localhost:8082/api";
-
   useEffect(() => {
     if (user) {
       reset({
@@ -41,11 +40,7 @@ const MyProfile = () => {
         qualification: "",
       });
       if (user.profilePhoto) {
-        // Check if it's already a full URL (e.g., Google profile image)
-        const photoUrl = user.profilePhoto.startsWith('http://') || user.profilePhoto.startsWith('https://')
-          ? user.profilePhoto
-          : `${API_BASE_URL}/uploads/${user.profilePhoto}`;
-        setPhotoPreview(photoUrl);
+        setPhotoPreview(getImageUrl(user.profilePhoto));
       } else {
         setPhotoPreview(null);
       }
@@ -260,11 +255,7 @@ const MyProfile = () => {
         qualification: "",
       });
       if (user.profilePhoto) {
-        // Check if it's already a full URL (e.g., Google profile image)
-        const photoUrl = user.profilePhoto.startsWith('http://') || user.profilePhoto.startsWith('https://')
-          ? user.profilePhoto
-          : `${API_BASE_URL}/uploads/${user.profilePhoto}`;
-        setPhotoPreview(photoUrl);
+        setPhotoPreview(getImageUrl(user.profilePhoto));
       } else {
         setPhotoPreview(null);
       }

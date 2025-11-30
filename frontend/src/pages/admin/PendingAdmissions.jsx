@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import API from "../../api/axiosConfig";
+import { getImageUrl } from "../../api/apiConfig";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import { useSidebar } from "../../context/SidebarContext";
@@ -12,7 +13,6 @@ const PendingAdmissions = () => {
   const [students, setStudents] = useState([]);
   const [search, setSearch] = useState("");
   const [totalPending, setTotalPending] = useState(0);
-  const API_BASE_URL = "http://localhost:8082/api";
 
   const fetchPending = useCallback(async (searchTerm = "") => {
     setLoading(true);
@@ -80,7 +80,7 @@ const PendingAdmissions = () => {
                     <div key={s.id} className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
                       <div className="flex items-center gap-3">
                         {s.profilePhoto ? (
-                          <img src={`${API_BASE_URL}/uploads/${s.profilePhoto}`} alt={s.name} className="w-12 h-12 rounded-full object-cover" />
+                          <img src={getImageUrl(s.profilePhoto)} alt={s.name} className="w-12 h-12 rounded-full object-cover" />
                         ) : (
                           <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
                             {(s.name || "").split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2)}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import API from "../../api/axiosConfig";
+import { getImageUrl } from "../../api/apiConfig";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import { useSidebar } from "../../context/SidebarContext";
@@ -10,7 +11,6 @@ const StudentProfile = () => {
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
-  const API_BASE_URL = "http://localhost:8082/api";
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -48,7 +48,7 @@ const StudentProfile = () => {
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center gap-4">
                   {profile.profilePhoto ? (
                     <img
-                      src={`${API_BASE_URL}/uploads/${profile.profilePhoto}`}
+                      src={getImageUrl(profile.profilePhoto)}
                       alt={profile.name}
                       className="w-20 h-20 rounded-full object-cover"
                     />

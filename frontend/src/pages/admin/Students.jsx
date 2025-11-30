@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import API from "../../api/axiosConfig";
+import { getImageUrl } from "../../api/apiConfig";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import { useSidebar } from "../../context/SidebarContext";
@@ -15,7 +16,6 @@ const Students = () => {
   const [sortDirection, setSortDirection] = useState("asc");
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [totalStudents, setTotalStudents] = useState(0);
-  const API_BASE_URL = "http://localhost:8082/api";
 
   const fetchStudents = useCallback(async (search = "", field = sortField, direction = sortDirection) => {
     setLoading(true);
@@ -176,7 +176,7 @@ const Students = () => {
                             <div className="flex items-center gap-3">
                               {student.profilePhoto ? (
                                 <img
-                                  src={`${API_BASE_URL}/uploads/${student.profilePhoto}`}
+                                  src={getImageUrl(student.profilePhoto)}
                                   alt={student.name}
                                   className="w-10 h-10 rounded-full object-cover"
                                 />
@@ -241,7 +241,7 @@ const Students = () => {
               <div className="flex items-center gap-3">
                 {selectedStudent.profilePhoto ? (
                   <img
-                    src={`${API_BASE_URL}/uploads/${selectedStudent.profilePhoto}`}
+                    src={getImageUrl(selectedStudent.profilePhoto)}
                     alt={selectedStudent.name}
                     className="w-14 h-14 rounded-full object-cover"
                   />

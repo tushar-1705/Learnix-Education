@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../api/axiosConfig";
+import { getImageUrl } from "../../api/apiConfig";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import { useSidebar } from "../../context/SidebarContext";
@@ -11,7 +12,6 @@ const AllStudents = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const API_BASE_URL = "http://localhost:8082/api";
 
   const fetchStudents = useCallback(async (searchTerm = "") => {
     setLoading(true);
@@ -73,7 +73,7 @@ const AllStudents = () => {
                     <div className="flex items-center gap-3">
                       {student.profilePhoto ? (
                         <img
-                          src={`${API_BASE_URL}/uploads/${student.profilePhoto}`}
+                          src={getImageUrl(student.profilePhoto)}
                           alt={student.name}
                           className="w-12 h-12 rounded-full object-cover"
                         />
