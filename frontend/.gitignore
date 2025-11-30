@@ -1,2 +1,4 @@
 .env
+# Frontend Setup Documentation
+frontend/ENV_SETUP.md
 node_modules/
