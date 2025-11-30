@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   learnix-backend:
-   build:
+    build:
       context: ./backend  
       dockerfile: ../Dockerfile
     container_name: learnix-backend
