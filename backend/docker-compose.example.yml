@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  learnix-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: learnix-backend
+    ports:
+      - "8082:8082"
+    environment:
+      # Database Configuration
+      - DB_URL=jdbc:mysql://mysql:3306/learnix_db
+      - DB_USERNAME=root
+      - DB_PASSWORD=your_password
+      
+      # JWT Configuration
+      - JWT_SECRET=your_jwt_secret_key_min_32_characters_long
+      - JWT_EXPIRATION_MS=86400000
+      
+      # Mail Configuration
+      - MAIL_HOST=smtp.gmail.com
+      - MAIL_PORT=587
+      - MAIL_USERNAME=your_email@gmail.com
+      - MAIL_PASSWORD=your_app_password
+      
+      # Razorpay Configuration
+      - RAZORPAY_KEY=your_razorpay_key
+      - RAZORPAY_SECRET=your_razorpay_secret
+      
+      # Google OAuth Configuration
+      - GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+      
+      # Server Port
+      - PORT=8082
+    depends_on:
+      - mysql
+    networks:
+      - learnix-network
+    volumes:
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: learnix-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=your_password
+      - MYSQL_DATABASE=learnix_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - learnix-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  learnix-network:
+    driver: bridge
+
