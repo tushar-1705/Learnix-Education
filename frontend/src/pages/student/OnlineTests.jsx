@@ -15,6 +15,60 @@ const StudentOnlineTests = () => {
   const [loadingTestDetail, setLoadingTestDetail] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const getTestStatus = (test) => {
+    const now = new Date();
+    const hasSchedule = test.startTime && test.endTime;
+
+    if (!hasSchedule) {
+      return {
+        isActive: true,
+        isUpcoming: false,
+        isExpired: false,
+        label: "Available",
+        buttonText: "Start Test",
+        disableButton: false,
+        unavailableMessage: "This test is not currently available.",
+      };
+    }
+
+    const start = new Date(test.startTime);
+    const end = new Date(test.endTime);
+
+    if (now < start) {
+      return {
+        isActive: false,
+        isUpcoming: true,
+        isExpired: false,
+        label: "Not started yet",
+        buttonText: "Not Started",
+        disableButton: true,
+        unavailableMessage: "This test has not started yet.",
+      };
+    }
+
+    if (now > end) {
+      return {
+        isActive: false,
+        isUpcoming: false,
+        isExpired: true,
+        label: "Expired",
+        buttonText: "Expired",
+        disableButton: true,
+        unavailableMessage: "This test is no longer available.",
+      };
+    }
+
+    return {
+      isActive: true,
+      isUpcoming: false,
+      isExpired: false,
+      label: "Open now",
+      buttonText: "Start Test",
+      disableButton: false,
+      unavailableMessage: "This test is not currently available.",
+    };
+  };
+
   const loadTests = () => {
     setLoadingTests(true);
     API.get("/student/tests")
@@ -34,11 +88,17 @@ const StudentOnlineTests = () => {
     loadResults();
   }, []);
 
-  const openTest = (testId) => {
+  const openTest = (test) => {
+    const status = getTestStatus(test);
+    if (!test.attempted && !status.isActive) {
+      toast.error(status.unavailableMessage);
+      return;
+    }
+
     setLoadingTestDetail(true);
     setSelectedTest(null);
     setAnswers({});
-    API.get(`/student/tests/${testId}`)
+    API.get(`/student/tests/${test.id}`)
       .then((res) => {
         const payload = res.data?.data || {};
         setSelectedTest(payload);
@@ -126,6 +186,9 @@ const StudentOnlineTests = () => {
               ) : (
                 <div className="space-y-4">
                   {tests.map((test) => (
+                    (() => {
+                      const status = getTestStatus(test);
+                      return (
                     <div
                       key={test.id}
                       className="border border-blue-200 rounded-xl p-4 bg-blue-50 flex flex-col gap-2 md:flex-row md:items-center md:justify-between hover:shadow-lg hover:border-blue-300 transition-all duration-300"
@@ -139,6 +202,12 @@ const StudentOnlineTests = () => {
                         <p className="text-xs text-gray-500">
                           Created by {test.teacherName || "Teacher"} on {formatDate(test.createdAt)}
                         </p>
+                        <p className="text-xs text-gray-500">
+                          Scheduled:{" "}
+                          {test.startTime ? formatDate(test.startTime) : "N/A"}{" "}
+                          -{" "}
+                          {test.endTime ? formatDate(test.endTime) : "N/A"}
+                        </p>
                       </div>
                       <div className="flex flex-col md:items-end gap-2">
                         {test.attempted ? (
@@ -146,19 +215,42 @@ const StudentOnlineTests = () => {
                             Attempted • Score: {test.score}/{test.maxMarks}
                           </span>
                         ) : (
-                          <span className="text-sm text-amber-600 font-semibold bg-amber-50 px-3 py-1 rounded-full">
-                            Not attempted
+                          <span className={`text-sm font-semibold px-3 py-1 rounded-full ${
+                            status.isExpired
+                              ? "text-red-600 bg-red-50"
+                              : status.isUpcoming
+                              ? "text-amber-600 bg-amber-50"
+                              : "text-blue-700 bg-blue-50"
+                          }`}>
+                            {status.isExpired
+                              ? "Expired"
+                              : status.isUpcoming
+                              ? "Not started yet"
+                              : "Available"}
                           </span>
                         )}
                         <button
                           type="button"
-                          onClick={() => openTest(test.id)}
-                          className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
+                          onClick={() => openTest(test)}
+                          disabled={!test.attempted && status.disableButton}
+                          className={`px-4 py-2 text-sm font-semibold text-white rounded-lg transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 ${
+                            !test.attempted && status.disableButton
+                              ? "bg-gray-400 cursor-not-allowed hover:scale-100"
+                              : "bg-blue-600 hover:bg-blue-700"
+                          }`}
                         >
-                          {test.attempted ? "View Summary" : "Start Test"}
+                          {test.attempted
+                            ? "View Summary"
+                            : status.isExpired
+                            ? "Expired"
+                            : status.isUpcoming
+                            ? "Not Started"
+                            : "Start Test"}
                         </button>
                       </div>
                     </div>
+                      );
+                    })()
                   ))}
                 </div>
               )}

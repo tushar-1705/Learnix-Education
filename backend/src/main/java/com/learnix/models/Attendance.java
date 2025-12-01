@@ -41,6 +41,9 @@ public class Attendance {
 
     @Column(nullable = false)
     private String status; // "PRESENT" or "ABSENT"
+
+    @Column(nullable = true)
+    private String subject; // Subject name for which attendance is marked
 }
 
 

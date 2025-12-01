@@ -29,6 +29,8 @@ const TeacherOnlineTests = () => {
     subject: "",
     description: "",
     maxMarks: 30,
+    startTime: "",
+    endTime: "",
     questions: [defaultQuestion()],
   });
 
@@ -91,6 +93,14 @@ const TeacherOnlineTests = () => {
       toast.error("Every question needs text.");
       return;
     }
+    if (!formData.startTime || !formData.endTime) {
+      toast.error("Please set both start and end time for the test.");
+      return;
+    }
+    if (new Date(formData.endTime) <= new Date(formData.startTime)) {
+      toast.error("End time must be after start time.");
+      return;
+    }
     setSaving(true);
     API.post("/teacher/tests", formData)
       .then(() => {
@@ -100,6 +110,8 @@ const TeacherOnlineTests = () => {
           subject: "",
           description: "",
           maxMarks: 30,
+          startTime: "",
+          endTime: "",
           questions: [defaultQuestion()],
         });
         loadTests();
@@ -219,6 +231,37 @@ const TeacherOnlineTests = () => {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Start Time
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={formData.startTime}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, startTime: e.target.value }))
+                      }
+                      className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      End Time
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={formData.endTime}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, endTime: e.target.value }))
+                      }
+                      className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-gray-800">Questions</h3>
@@ -328,6 +371,12 @@ const TeacherOnlineTests = () => {
                         <p className="text-sm text-gray-500">
                           Subject: {test.subject} • {test.questionCount} questions • Max Marks:{" "}
                           {test.maxMarks}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Scheduled:{" "}
+                          {test.startTime ? formatDate(test.startTime) : "N/A"}{" "}
+                          -{" "}
+                          {test.endTime ? formatDate(test.endTime) : "N/A"}
                         </p>
                         <p className="text-xs text-gray-400">Created on {formatDate(test.createdAt)}</p>
                       </div>

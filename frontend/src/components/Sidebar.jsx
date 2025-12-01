@@ -154,6 +154,20 @@ const Sidebar = () => {
               </li>
               <li>
                 <Link 
+                  to="/admin/online-test-reports" 
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                    isActive("/admin/online-test-reports")
+                      ? "bg-blue-600 text-white font-semibold shadow-lg"
+                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                  } ${!isOpen ? "lg:justify-center lg:px-3" : ""}`}
+                  title={!isOpen ? "Online Test Reports" : ""}
+                >
+                  <HiDocumentText className="text-xl flex-shrink-0" />
+                  {isOpen && <span>Online Test Reports</span>}
+                </Link>
+              </li>
+              <li>
+                <Link 
                   to="/admin/upcoming-events" 
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                     isActive("/admin/upcoming-events")
@@ -192,20 +206,6 @@ const Sidebar = () => {
                 >
                   <HiQuestionMarkCircle className="text-xl flex-shrink-0" />
                   {isOpen && <span>Student Help</span>}
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/admin/myprofile" 
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                    isActive("/admin/myprofile")
-                      ? "bg-blue-600 text-white font-semibold shadow-lg"
-                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
-                  } ${!isOpen ? "lg:justify-center lg:px-3" : ""}`}
-                  title={!isOpen ? "My Profile" : ""}
-                >
-                  <HiUser className="text-xl flex-shrink-0" />
-                  {isOpen && <span>My Profile</span>}
                 </Link>
               </li>
             </>
@@ -297,20 +297,6 @@ const Sidebar = () => {
                   {isOpen && <span>Online Tests</span>}
                 </Link>
               </li>
-              <li>
-                <Link 
-                  to="/teacher/myprofile" 
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                    isActive("/teacher/myprofile")
-                      ? "bg-blue-600 text-white font-semibold shadow-lg"
-                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
-                  } ${!isOpen ? "lg:justify-center lg:px-3" : ""}`}
-                  title={!isOpen ? "Profile" : ""}
-                >
-                  <HiUser className="text-xl flex-shrink-0" />
-                  {isOpen && <span>Profile</span>}
-                </Link>
-              </li>
             </>
           )}
 
@@ -398,20 +384,6 @@ const Sidebar = () => {
                 >
                   <HiDocumentText className="text-xl flex-shrink-0" />
                   {isOpen && <span>Online Tests</span>}
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/student/myprofile" 
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                    isActive("/student/myprofile")
-                      ? "bg-blue-600 text-white font-semibold shadow-lg"
-                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
-                  } ${!isOpen ? "lg:justify-center lg:px-3" : ""}`}
-                  title={!isOpen ? "My Profile" : ""}
-                >
-                  <HiUser className="text-xl flex-shrink-0" />
-                  {isOpen && <span>My Profile</span>}
                 </Link>
               </li>
             </>

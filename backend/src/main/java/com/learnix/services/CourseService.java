@@ -167,24 +167,42 @@ public class CourseService {
     public ResponseEntity<?> getCourseContents(Long courseId, String studentEmail) {
         var courseOpt = courseRepository.findById(courseId);
         if (courseOpt.isEmpty()) {
-        	return universalResponse("Course not found with ID: " + courseId, null, HttpStatus.NOT_FOUND);
+            return universalResponse("Course not found with ID: " + courseId, null, HttpStatus.NOT_FOUND);
         }
 
         Users student = null;
+
         // Check if student is enrolled and paid
         if (studentEmail != null) {
             var studentOpt = userRepository.findByEmail(studentEmail);
             if (studentOpt != null && "STUDENT".equalsIgnoreCase(studentOpt.getRole())) {
-                student = studentOpt;
                 var enrollmentOpt = enrollmentRepository.findByStudentAndCourse(studentOpt, courseOpt.get());
+
+                // If not enrolled/paid, return read-only preview of course content (no video URLs)
                 if (enrollmentOpt == null || !Boolean.TRUE.equals(enrollmentOpt.getIsPaid())) {
-                	return universalResponse("Please enroll and complete payment to access course content", null, HttpStatus.FORBIDDEN);
+                    var previewList = courseContentRepository.findByCourseOrderByOrderIndexAsc(courseOpt.get());
+                    List<Map<String, Object>> preview = previewList.stream().map(content -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("id", content.getId());
+                        m.put("title", content.getTitle());
+                        m.put("durationMinutes", content.getDurationMinutes());
+                        m.put("orderIndex", content.getOrderIndex());
+                        // For not-enrolled students, everything is locked and not watched
+                        m.put("isUnlocked", false);
+                        m.put("isWatched", false);
+                        return m;
+                    }).collect(Collectors.toList());
+
+                    return universalResponse("Course contents fetched successfully", preview, HttpStatus.OK);
                 }
+
+                // Student is enrolled & paid
+                student = studentOpt;
             }
         }
 
         var list = courseContentRepository.findByCourseOrderByOrderIndexAsc(courseOpt.get());
-        
+
         // If student is enrolled, add unlock status for progressive unlocking
         if (student != null) {
             List<Map<String, Object>> contentsWithStatus = new java.util.ArrayList<>();
@@ -196,11 +214,11 @@ public class CourseService {
                 contentMap.put("videoUrl", content.getVideoUrl());
                 contentMap.put("durationMinutes", content.getDurationMinutes());
                 contentMap.put("orderIndex", content.getOrderIndex());
-                
+
                 // First video is always unlocked if enrolled
                 boolean isUnlocked = (i == 0);
                 boolean isWatched = false;
-                
+
                 if (i > 0) {
                     // Check if previous content is completed
                     CourseContent previousContent = list.get(i - 1);
@@ -209,20 +227,21 @@ public class CourseService {
                         isUnlocked = true;
                     }
                 }
-                
+
                 // Check if current content is watched
                 var currentProgress = courseProgressRepository.findByStudentAndContent(student, content);
                 if (currentProgress.isPresent() && Boolean.TRUE.equals(currentProgress.get().getIsCompleted())) {
                     isWatched = true;
                 }
-                
+
                 contentMap.put("isUnlocked", isUnlocked);
                 contentMap.put("isWatched", isWatched);
                 contentsWithStatus.add(contentMap);
             }
             return universalResponse("Course contents fetched successfully", contentsWithStatus, HttpStatus.OK);
         }
-        
+
+        // For non-students or when no email is provided, return raw list (existing behaviour)
         return universalResponse("Course contents fetched successfully", list, HttpStatus.OK);
     }
     

@@ -34,6 +34,7 @@ import AllStudents from "./pages/teacher/AllStudents";
 import Attendance from "./pages/teacher/Attendance";
 import StudentHelp from "./pages/student/StudentHelp";
 import AdminStudentHelp from "./pages/admin/AdminStudentHelp";
+import AdminOnlineTestReports from "./pages/admin/OnlineTestReports";
 import TeacherOnlineTests from "./pages/teacher/OnlineTests";
 import StudentOnlineTests from "./pages/student/OnlineTests";
 import Notifications from "./pages/student/Notifications";
@@ -231,6 +232,14 @@ function App() {
             element={
               <ProtectedRoute role="ADMIN">
                 <AdminStudentHelp />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/online-test-reports"
+            element={
+              <ProtectedRoute role="ADMIN">
+                <AdminOnlineTestReports />
               </ProtectedRoute>
             }
           />

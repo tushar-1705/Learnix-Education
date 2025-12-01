@@ -19,6 +19,7 @@ const Login = () => {
   const navigate = useNavigate();
   const email = watch("email");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -80,6 +81,7 @@ const Login = () => {
 
   // ---------------- NORMAL EMAIL PASSWORD LOGIN ----------------
   const onSubmit = async (data) => {
+    setIsLoading(true);
     try {
       const res = await API.post("/auth/login", {
         email: data.email,
@@ -107,6 +109,8 @@ const Login = () => {
       } else {
         toast.error(errorMessage || "Login failed. Please try again.");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -248,9 +252,14 @@ const Login = () => {
 
           <button
             type="submit"
-            className="mt-8 w-full rounded-md bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105"
+            disabled={isLoading}
+            className={`mt-8 w-full rounded-md py-3 text-sm font-semibold text-white shadow-lg hover:shadow-xl transform ${
+              isLoading
+                ? "bg-blue-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700 hover:scale-105"
+            }`}
           >
-            Sign in
+            {isLoading ? "Signing in..." : "Sign in"}
           </button>
 
           <p className="mt-6 text-center text-sm text-gray-600">

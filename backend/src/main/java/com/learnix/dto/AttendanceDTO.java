@@ -19,6 +19,7 @@ public class AttendanceDTO {
     @Setter
     public static class AttendanceRequest {
         private String date; // ISO format (e.g. 2025-10-29)
+        private String subject; // Subject name for which attendance is marked
         private List<AttendanceEntry> entries = new ArrayList<>();
     }
 }

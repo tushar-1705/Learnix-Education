@@ -192,6 +192,15 @@ public class AdminController {
         return adminService.getCourseBuyers(courseId);
     }
 
+    // Online test reports
+    @GetMapping("/online-tests/reports")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getOnlineTestReports(
+            @RequestParam(required = false) String studentName,
+            @RequestParam(required = false) Long testId) {
+        return adminService.getOnlineTestReports(studentName, testId);
+    }
+
     // Student Help Requests
     @GetMapping("/student-help")
     @PreAuthorize("hasRole('ADMIN')")

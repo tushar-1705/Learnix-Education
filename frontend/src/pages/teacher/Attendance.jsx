@@ -12,7 +12,11 @@ const Attendance = () => {
   const [sortKey, setSortKey] = useState("name");
   const [sortDir, setSortDir] = useState("asc");
   const [attendanceByStudent, setAttendanceByStudent] = useState({});
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0,10));
+  // Date is always today and cannot be changed
+  const [date] = useState(() => new Date().toISOString().slice(0,10));
+  const [selectedSubject, setSelectedSubject] = useState("");
+  const [subjects, setSubjects] = useState([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -44,6 +48,28 @@ const Attendance = () => {
     return () => clearTimeout(handler);
   }, [fetchStudents, search, sortKey, sortDir]);
 
+  // Fetch teacher's assigned subjects
+  useEffect(() => {
+    const loadSubjects = async () => {
+      setLoadingSubjects(true);
+      try {
+        const res = await API.get("/teacher/my-subjects");
+        const subjectsList = res.data?.data || [];
+        setSubjects(subjectsList);
+        // Auto-select first subject if available
+        if (subjectsList.length > 0 && !selectedSubject) {
+          setSelectedSubject(subjectsList[0].subject);
+        }
+      } catch (error) {
+        console.error("Error fetching subjects:", error);
+        setSubjects([]);
+      } finally {
+        setLoadingSubjects(false);
+      }
+    };
+    loadSubjects();
+  }, []);
+
   const toggleSort = (key) => {
     if (sortKey === key) setSortDir(sortDir === "asc" ? "desc" : "asc");
     else { setSortKey(key); setSortDir("asc"); }
@@ -54,6 +80,11 @@ const Attendance = () => {
   };
 
   const handleSubmit = async () => {
+    if (!selectedSubject) {
+      toast.warning("Please select a subject.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       // Only include students whose attendance status has been explicitly set by the teacher
@@ -70,12 +101,17 @@ const Attendance = () => {
         return;
       }
 
-      await API.post("/teacher/attendance/mark", { date, entries });
+      await API.post("/teacher/attendance/mark", { 
+        date, 
+        subject: selectedSubject,
+        entries 
+      });
       toast.success("Attendance submitted successfully.");
       // Reset selections so buttons return to normal state
       setAttendanceByStudent({});
     } catch (e) {
-      toast.error("Failed to submit attendance.");
+      const errorMsg = e.response?.data?.message || "Failed to submit attendance.";
+      toast.error(errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -91,17 +127,55 @@ const Attendance = () => {
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-bold text-gray-800">Attendance</h1>
               <div className="flex gap-3">
-                <input type="date" value={date} onChange={(e)=>setDate(e.target.value)} className="border rounded-lg px-3 py-2" />
+                <div className="flex flex-col">
+                  <label className="text-xs text-gray-500 mb-1">Date (Today)</label>
+                  <input 
+                    type="date" 
+                    value={date} 
+                    disabled
+                    className="border rounded-lg px-3 py-2 bg-gray-100 cursor-not-allowed" 
+                    title="Date is automatically set to today and cannot be changed"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-xs text-gray-500 mb-1">Subject *</label>
+                  <select
+                    value={selectedSubject}
+                    onChange={(e) => setSelectedSubject(e.target.value)}
+                    disabled={loadingSubjects || subjects.length === 0}
+                    className="border rounded-lg px-3 py-2 min-w-[150px] disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    required
+                  >
+                    {loadingSubjects ? (
+                      <option>Loading subjects...</option>
+                    ) : subjects.length === 0 ? (
+                      <option value="">No subjects assigned</option>
+                    ) : (
+                      <>
+                        <option value="">Select Subject</option>
+                        {subjects.map((subj) => (
+                          <option key={subj.id} value={subj.subject}>
+                            {subj.subject}
+                          </option>
+                        ))}
+                      </>
+                    )}
+                  </select>
+                </div>
                 <input
                   placeholder="Search by name or email"
                   value={search}
                   onChange={(e)=>setSearch(e.target.value)}
-                  className="border rounded-lg px-3 py-2 w-64"
+                  className="border rounded-lg px-3 py-2 min-w-[200px]"
                 />
                 <button
                   onClick={handleSubmit}
-                  disabled={submitting}
-                  className={`px-4 py-2 rounded-lg text-white ${submitting ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+                  disabled={submitting || !selectedSubject || loadingSubjects}
+                  className={`px-4 py-2 rounded-lg text-white min-w-[160px] text-sm font-semibold ${
+                    submitting || !selectedSubject || loadingSubjects
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
                 >
                   {submitting ? 'Submitting...' : 'Submit Attendance'}
                 </button>

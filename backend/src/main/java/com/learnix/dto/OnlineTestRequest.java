@@ -14,6 +14,9 @@ public class OnlineTestRequest {
     private String subject;
     private String description;
     private Integer maxMarks;
+
+    private String startTime;
+    private String endTime;
     private List<QuestionDTO> questions;
 
     @Data

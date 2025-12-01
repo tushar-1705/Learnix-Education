@@ -242,9 +242,31 @@ public class TeacherService {
             	return universalResponse("Teacher not found", null, HttpStatus.NOT_FOUND);
             }
 
-            LocalDate date = (request.getDate() != null && !request.getDate().isEmpty())
-                    ? LocalDate.parse(request.getDate())
-                    : LocalDate.now();
+            // Validate subject is provided
+            if (request.getSubject() == null || request.getSubject().trim().isEmpty()) {
+                return universalResponse("Subject is required", null, HttpStatus.BAD_REQUEST);
+            }
+
+            // Get Teacher record
+            Teacher teacherRecord = teacherRepository.findByUser(teacher);
+            if (teacherRecord == null) {
+                return universalResponse("Teacher record not found", null, HttpStatus.NOT_FOUND);
+            }
+
+            // Validate that the subject is assigned to this teacher
+            List<TeacherSubject> assignedSubjects = teacherSubjectRepository.findByTeacher(teacherRecord);
+            String requestedSubject = request.getSubject().trim();
+            boolean subjectAllowed = assignedSubjects.stream()
+                    .map(TeacherSubject::getSubject)
+                    .filter(s -> s != null)
+                    .anyMatch(s -> s.equalsIgnoreCase(requestedSubject));
+
+            if (!subjectAllowed) {
+                return universalResponse("You are not assigned to the selected subject", null, HttpStatus.FORBIDDEN);
+            }
+
+            // Always use today's date (date is dynamic and cannot be changed by teacher)
+            LocalDate date = LocalDate.now();
 
             for (AttendanceEntry entry : request.getEntries()) {
                 Users student = userRepository.findById(entry.getStudentId()).orElse(null);
@@ -258,6 +280,7 @@ public class TeacherService {
                         .teacher(teacher)
                         .date(date)
                         .status(status)
+                        .subject(requestedSubject)
                         .build();
 
                 attendanceRepository.save(attendance);

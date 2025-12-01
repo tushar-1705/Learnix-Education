@@ -30,6 +30,8 @@ public class OnlineTest {
     private String description;
     private Integer maxMarks;
     private Boolean published = true;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
 
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = LocalDateTime.now();

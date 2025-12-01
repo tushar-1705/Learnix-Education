@@ -2,6 +2,7 @@ package com.learnix.services;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -92,11 +93,33 @@ public class OnlineTestService {
                 return universalResponse("Please add at least one question", null, HttpStatus.BAD_REQUEST);
             }
 
+            // Validate schedule
+            if (request.getStartTime() == null || request.getEndTime() == null
+                    || request.getStartTime().isBlank() || request.getEndTime().isBlank()) {
+                return universalResponse("Start time and end time are required", null, HttpStatus.BAD_REQUEST);
+            }
+
+            LocalDateTime startTime;
+            LocalDateTime endTime;
+            try {
+                startTime = LocalDateTime.parse(request.getStartTime().trim());
+                endTime = LocalDateTime.parse(request.getEndTime().trim());
+            } catch (DateTimeParseException e) {
+                return universalResponse("Invalid date/time format for start or end time", null,
+                        HttpStatus.BAD_REQUEST);
+            }
+
+            if (!endTime.isAfter(startTime)) {
+                return universalResponse("End time must be after start time", null, HttpStatus.BAD_REQUEST);
+            }
+
             OnlineTest test = new OnlineTest();
             test.setTitle(request.getTitle().trim());
             test.setSubject(request.getSubject().trim());
             test.setDescription(request.getDescription());
             test.setMaxMarks(request.getMaxMarks());
+            test.setStartTime(startTime);
+            test.setEndTime(endTime);
             test.setTeacher(teacher);
             test.setPublished(true);
 
@@ -145,6 +168,8 @@ public class OnlineTestService {
                 row.put("questionCount", test.getQuestions().size());
                 row.put("createdAt", test.getCreatedAt());
                 row.put("published", test.getPublished());
+                row.put("startTime", test.getStartTime());
+                row.put("endTime", test.getEndTime());
                 row.put("submissions", submissionRepository.countByTest(test));
                 return row;
             }).collect(Collectors.toList());
@@ -198,6 +223,8 @@ public class OnlineTestService {
             }
 
             List<OnlineTest> tests = onlineTestRepository.findByPublishedTrueOrderByCreatedAtDesc();
+            LocalDateTime now = LocalDateTime.now();
+
             List<Map<String, Object>> payload = tests.stream().map(test -> {
                 Map<String, Object> row = new HashMap<>();
                 row.put("id", test.getId());
@@ -210,6 +237,29 @@ public class OnlineTestService {
                         ? test.getTeacher().getUser().getName()
                         : null);
                 row.put("createdAt", test.getCreatedAt());
+                row.put("startTime", test.getStartTime());
+                row.put("endTime", test.getEndTime());
+
+                boolean hasSchedule = test.getStartTime() != null && test.getEndTime() != null;
+                boolean upcoming = false;
+                boolean expired = false;
+                boolean active = false;
+                if (hasSchedule) {
+                    if (now.isBefore(test.getStartTime())) {
+                        upcoming = true;
+                    } else if (now.isAfter(test.getEndTime())) {
+                        expired = true;
+                    } else {
+                        active = true;
+                    }
+                } else {
+                    // Backward compatibility: no schedule means always active
+                    active = true;
+                }
+
+                row.put("upcoming", upcoming);
+                row.put("expired", expired);
+                row.put("active", active);
 
                 submissionRepository.findByTestAndStudent(test, student).ifPresentOrElse(sub -> {
                     row.put("attempted", true);
@@ -244,6 +294,7 @@ public class OnlineTestService {
             }
 
             OnlineTest test = optionalTest.get();
+
             Map<String, Object> payload = new HashMap<>();
             payload.put("id", test.getId());
             payload.put("title", test.getTitle());
@@ -251,9 +302,16 @@ public class OnlineTestService {
             payload.put("description", test.getDescription());
             payload.put("maxMarks", test.getMaxMarks());
             payload.put("questionCount", test.getQuestions().size());
+            payload.put("startTime", test.getStartTime());
+            payload.put("endTime", test.getEndTime());
 
             Optional<OnlineTestSubmission> submissionOpt = submissionRepository.findByTestAndStudent(test, student);
-            
+
+            // If not attempted yet, ensure test is currently active
+            if (submissionOpt.isEmpty() && !isTestCurrentlyActive(test)) {
+                return universalResponse("This test is not currently available", null, HttpStatus.BAD_REQUEST);
+            }
+
             // Create a map of questionId -> answer details if submission exists
             Map<Long, OnlineTestAnswer> answerMap = new HashMap<>();
             if (submissionOpt.isPresent()) {
@@ -321,6 +379,10 @@ public class OnlineTestService {
                 return universalResponse("Test not found", null, HttpStatus.NOT_FOUND);
             }
             OnlineTest test = optionalTest.get();
+
+            if (!isTestCurrentlyActive(test)) {
+                return universalResponse("This test is no longer available", null, HttpStatus.BAD_REQUEST);
+            }
 
             if (submissionRepository.findByTestAndStudent(test, student).isPresent()) {
                 return universalResponse("You have already attempted this test", null, HttpStatus.BAD_REQUEST);
@@ -433,6 +495,22 @@ public class OnlineTestService {
             return universalResponse("Correct option must be one of A, B, C or D", null, HttpStatus.BAD_REQUEST);
         }
         return null;
+    }
+
+    private boolean isTestCurrentlyActive(OnlineTest test) {
+        if (test == null) {
+            return false;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime start = test.getStartTime();
+        LocalDateTime end = test.getEndTime();
+
+        // If no schedule is defined, treat as always active (for backward compatibility)
+        if (start == null || end == null) {
+            return true;
+        }
+
+        return (now.isEqual(start) || now.isAfter(start)) && now.isBefore(end);
     }
 
     private int calculateScore(int correctCount, int totalQuestions, int maxMarks) {

@@ -31,6 +31,7 @@ import com.learnix.repositories.CourseProgressRepository;
 import com.learnix.repositories.CourseRepository;
 import com.learnix.repositories.EnrollmentRepository;
 import com.learnix.repositories.GradeRepository;
+import com.learnix.repositories.OnlineTestRepository;
 import com.learnix.repositories.OnlineTestSubmissionRepository;
 import com.learnix.repositories.StudentHelpRepository;
 import com.learnix.repositories.StudentRepository;
@@ -98,6 +99,9 @@ public class AdminService {
 
     @Autowired
     private OnlineTestSubmissionRepository onlineTestSubmissionRepository;
+    
+    @Autowired
+    private OnlineTestRepository onlineTestRepository;
 
     // Get all students
     public ResponseEntity<?> getAllStudents(String search, String sortField, String sortDirection) {
@@ -592,12 +596,28 @@ public class AdminService {
                 attendanceRepository.deleteAll(attendances);
             }
             
-            // Step 6: Delete the Teacher record
+            // Step 6: Delete all OnlineTest records and their submissions for this teacher
+            if (teacherRecord != null && teacher.getId() != null) {
+                List<com.learnix.models.OnlineTest> onlineTests = onlineTestRepository.findByTeacherUserId(teacher.getId());
+                if (onlineTests != null && !onlineTests.isEmpty()) {
+                    for (com.learnix.models.OnlineTest test : onlineTests) {
+                        // Delete all submissions for this test (which will cascade delete answers)
+                        List<com.learnix.models.OnlineTestSubmission> submissions = onlineTestSubmissionRepository.findByTest(test);
+                        if (submissions != null && !submissions.isEmpty()) {
+                            onlineTestSubmissionRepository.deleteAll(submissions);
+                        }
+                        // Delete the test (which will cascade delete questions)
+                        onlineTestRepository.delete(test);
+                    }
+                }
+            }
+            
+            // Step 7: Delete the Teacher record
             if (teacherRecord != null) {
                 teacherRepository.delete(teacherRecord);
             }
             
-            // Step 7: Delete the Users record
+            // Step 8: Delete the Users record
             userRepository.delete(teacher);
             
             return universalResponse("Teacher deleted successfully", null, HttpStatus.OK);
@@ -809,28 +829,31 @@ public class AdminService {
                         if (teacher != null) {
                             teacherName = teacher.getName() != null ? teacher.getName() : "Unknown";
                             
-                            // Get class name - prefer course from attendance, otherwise get teacher's assigned subjects
-                            if (attendance.getCourse() != null && attendance.getCourse().getTitle() != null) {
-                                // If attendance has a course, use that course's title
+                            // Get class name - prefer subject from attendance (the specific subject for which attendance was marked)
+                            if (attendance.getSubject() != null && !attendance.getSubject().trim().isEmpty()) {
+                                // Use the specific subject for which attendance was marked (new records)
+                                className = attendance.getSubject();
+                            } else if (attendance.getCourse() != null && attendance.getCourse().getTitle() != null) {
+                                // Fall back to course title if subject is not available
                                 className = attendance.getCourse().getTitle();
                             } else {
-                                // Get teacher's assigned subjects (classes) from TeacherSubject model
-                                // Admin assigns subjects to teachers via assignSubjectToTeacher
-                                // Use teacher user ID to query
-                                if (teacher.getId() != null) {
-                                    List<com.learnix.models.TeacherSubject> teacherSubjects = teacherSubjectRepository.findByTeacherUserId(teacher.getId());
-                                    if (!teacherSubjects.isEmpty()) {
-                                        // Show all subjects assigned to this teacher, comma-separated
-                                        className = teacherSubjects.stream()
-                                                .filter(ts -> ts.getSubject() != null && !ts.getSubject().trim().isEmpty())
-                                                .map(com.learnix.models.TeacherSubject::getSubject)
+                                // For old records without subject, try to get teacher's assigned subjects
+                                Teacher teacherRecord = teacherRepository.findByUser(teacher);
+                                if (teacherRecord != null) {
+                                    List<TeacherSubject> teacherSubjects = teacherSubjectRepository.findByTeacher(teacherRecord);
+                                    if (teacherSubjects != null && !teacherSubjects.isEmpty()) {
+                                        // Get all assigned subjects, filter out null/empty, and join with comma
+                                        String subjects = teacherSubjects.stream()
+                                                .map(TeacherSubject::getSubject)
+                                                .filter(s -> s != null && !s.trim().isEmpty())
                                                 .collect(Collectors.joining(", "));
-                                        // If all subjects had null/empty values, fall back to "General"
-                                        if (className.isEmpty()) {
-                                            className = "General";
+                                        
+                                        if (!subjects.isEmpty()) {
+                                            className = subjects;
                                         }
                                     }
                                 }
+                                // If still "General", it means teacher has no subjects assigned
                             }
                         }
                         
@@ -1238,6 +1261,81 @@ public class AdminService {
             return universalResponse("Payments fetched successfully", data, HttpStatus.OK);
         } catch (Exception e) {
         	return universalResponse("Error fetching payments: " + e.getMessage(), null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // Online test reports for admin
+    public ResponseEntity<?> getOnlineTestReports(String studentName, Long testId) {
+        try {
+            List<com.learnix.models.OnlineTestSubmission> submissions = onlineTestSubmissionRepository.findAll();
+
+            List<Map<String, Object>> items = submissions.stream()
+                    .filter(sub -> {
+                        if (studentName != null && !studentName.trim().isEmpty()) {
+                            String keyword = studentName.trim().toLowerCase();
+                            return sub.getStudent() != null
+                                    && sub.getStudent().getUser() != null
+                                    && sub.getStudent().getUser().getName() != null
+                                    && sub.getStudent().getUser().getName().toLowerCase().contains(keyword);
+                        }
+                        return true;
+                    })
+                    .filter(sub -> {
+                        if (testId != null) {
+                            return sub.getTest() != null && testId.equals(sub.getTest().getId());
+                        }
+                        return true;
+                    })
+                    .map(sub -> {
+                        Map<String, Object> row = new HashMap<>();
+                        row.put("submissionId", sub.getId());
+                        row.put("score", sub.getScore());
+                        row.put("totalCorrect", sub.getTotalCorrect());
+                        row.put("submittedAt", sub.getSubmittedAt());
+
+                        if (sub.getStudent() != null && sub.getStudent().getUser() != null) {
+                            Users u = sub.getStudent().getUser();
+                            Map<String, Object> studentInfo = new HashMap<>();
+                            studentInfo.put("id", u.getId());
+                            studentInfo.put("name", u.getName());
+                            studentInfo.put("email", u.getEmail());
+                            studentInfo.put("rollNumber", "ST00" + u.getId());
+                            row.put("student", studentInfo);
+                        }
+
+                        if (sub.getTest() != null) {
+                            Map<String, Object> testInfo = new HashMap<>();
+                            testInfo.put("id", sub.getTest().getId());
+                            testInfo.put("title", sub.getTest().getTitle());
+                            testInfo.put("subject", sub.getTest().getSubject());
+                            testInfo.put("maxMarks", sub.getTest().getMaxMarks());
+                            testInfo.put("startTime", sub.getTest().getStartTime());
+                            testInfo.put("endTime", sub.getTest().getEndTime());
+
+                            if (sub.getTest().getTeacher() != null && sub.getTest().getTeacher().getUser() != null) {
+                                Users t = sub.getTest().getTeacher().getUser();
+                                Map<String, Object> teacherInfo = new HashMap<>();
+                                teacherInfo.put("id", t.getId());
+                                teacherInfo.put("name", t.getName());
+                                teacherInfo.put("email", t.getEmail());
+                                testInfo.put("teacher", teacherInfo);
+                            }
+
+                            row.put("test", testInfo);
+                        }
+
+                        return row;
+                    })
+                    .collect(Collectors.toList());
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("items", items);
+            data.put("total", items.size());
+
+            return universalResponse("Online test reports fetched successfully", data, HttpStatus.OK);
+        } catch (Exception e) {
+            return universalResponse("Error fetching online test reports: " + e.getMessage(), null,
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
