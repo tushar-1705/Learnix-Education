@@ -56,12 +56,20 @@ const CourseDetails = () => {
         console.log(`🔄 Refresh - Contents fetched: ${fetchedContents.length} items`);
         setContents(fetchedContents);
         
-        if (fetchedContents.length > 0) {
+        // Check if any content is actually unlocked
+        const hasUnlockedContent = fetchedContents.some(item => item.isUnlocked !== false);
+        
+        if (hasUnlockedContent) {
           setIsEnrolled(true);
           toast.success(`Course content unlocked! ${fetchedContents.length} lesson(s) available.`);
+        } else if (fetchedContents.length > 0) {
+          // Contents exist but all locked - student is NOT enrolled
+          setIsEnrolled(false);
+          toast.warning("You need to complete payment to access course content.");
         } else if (isPaid) {
           toast.info("Enrollment confirmed, but this course has no content yet.");
         } else {
+          setIsEnrolled(false);
           toast.info("You are not enrolled in this course yet.");
         }
       } catch (contentsErr) {
@@ -139,12 +147,22 @@ const CourseDetails = () => {
               const fetchedContents = contentsRes?.data?.data || contentsRes?.data || [];
               setContents(fetchedContents);
               
-              // If we got contents, student is enrolled
-              if (fetchedContents.length > 0) {
+              // Check if any content is actually unlocked (student is enrolled)
+              const hasUnlockedContent = fetchedContents.some(item => item.isUnlocked !== false);
+              
+              if (hasUnlockedContent) {
+                // Student is enrolled and has access to content
                 setIsEnrolled(true);
+              } else if (fetchedContents.length > 0) {
+                // Contents exist but all are locked - student is NOT enrolled
+                setIsEnrolled(false);
+                console.warn("⚠️ Contents fetched but all locked - student not enrolled");
               } else if (isPaid) {
                 // Enrollment check says paid but no contents - might be empty course
                 console.warn("⚠️ Enrollment confirmed but course has no content");
+              } else {
+                // Not enrolled
+                setIsEnrolled(false);
               }
             } catch (contentsErr) {
               console.error("❌ Error fetching contents:", contentsErr);
@@ -172,12 +190,18 @@ const CourseDetails = () => {
               const contentsRes = await API.get(`/courses/${id}/contents?email=${email}`);
               const fetchedContents = contentsRes?.data?.data || contentsRes?.data || [];
               setContents(fetchedContents);
-              if (fetchedContents.length > 0) {
+              
+              // Check if any content is actually unlocked
+              const hasUnlockedContent = fetchedContents.some(item => item.isUnlocked !== false);
+              if (hasUnlockedContent) {
                 setIsEnrolled(true);
+              } else {
+                setIsEnrolled(false);
               }
             } catch (contentsErr) {
               console.error("Error fetching contents:", contentsErr);
               setContents([]);
+              setIsEnrolled(false);
             }
           }
         } else {

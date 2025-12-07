@@ -512,10 +512,13 @@ public class AdminService {
                 studentHelpRepository.deleteAll(studentHelps);
             }
 
-            // Step 4: Delete all Payment records
+            // Step 4: Preserve Payment records for revenue history
             var payments = paymentRepository.findByStudent(student);
             if (payments != null && !payments.isEmpty()) {
-                paymentRepository.deleteAll(payments);
+                for (var payment : payments) {
+                    payment.setStudent(null); 
+                }
+                paymentRepository.saveAll(payments);
             }
 
             // Step 5: Delete all Enrollment records

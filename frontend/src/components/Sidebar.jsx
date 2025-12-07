@@ -29,7 +29,6 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Sidebar Overlay for Mobile */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
@@ -37,7 +36,6 @@ const Sidebar = () => {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`bg-white h-screen border-r border-blue-200 shadow-lg transition-all duration-300 ease-in-out fixed z-40 overflow-y-auto backdrop-blur-sm ${
           isOpen
@@ -45,7 +43,6 @@ const Sidebar = () => {
             : "w-0 -translate-x-full lg:translate-x-0 lg:w-28 lg:p-4"
         }`}
       >
-        {/* Desktop Toggle Button - Top Right Corner on Border Line (Only show when open) */}
         {isOpen && (
           <button
             onClick={toggleSidebar}
@@ -56,7 +53,6 @@ const Sidebar = () => {
           </button>
         )}
 
-        {/* Mobile Close Button - Top Right when sidebar is open on mobile */}
         {isOpen && (
           <button
             onClick={toggleSidebar}

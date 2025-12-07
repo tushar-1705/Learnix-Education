@@ -213,8 +213,27 @@ public class PaymentService {
         Optional<Course> courseOpt = courseRepository.findById(courseId);
         if (courseOpt.isEmpty()) return false;
 
-        Enrollment enrollment = enrollmentRepository.findByStudentAndCourse(student, courseOpt.get());
-        return enrollment != null && Boolean.TRUE.equals(enrollment.getIsPaid());
+        Course course = courseOpt.get();
+        Enrollment enrollment = enrollmentRepository.findByStudentAndCourse(student, course);
+        
+        // First check if enrollment exists and is marked as paid
+        if (enrollment == null || !Boolean.TRUE.equals(enrollment.getIsPaid())) {
+            return false;
+        }
+        
+        // Verify there's actually a successful payment record
+        List<Payment> payments = paymentRepository.findByStudentAndCourse(student, course);
+        boolean hasSuccessfulPayment = payments.stream()
+                .anyMatch(p -> "SUCCESS".equals(p.getStatus()));
+        
+        // If enrollment says paid but no successful payment exists, correct the enrollment
+        if (!hasSuccessfulPayment) {
+            enrollment.setIsPaid(false);
+            enrollmentRepository.save(enrollment);
+            return false;
+        }
+        
+        return true;
     }
 
     // Get revenue statistics

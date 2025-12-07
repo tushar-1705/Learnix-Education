@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import API from "../api/axiosConfig";
+import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { HiEye, HiEyeOff } from "react-icons/hi";
 import { FiMail, FiUser, FiPhone } from "react-icons/fi";
@@ -14,9 +15,11 @@ const Register = () => {
     reset,
     watch
   } = useForm();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Watch password field to compare with confirm password
   const password = watch("password");
@@ -76,17 +79,59 @@ const Register = () => {
           cancel_on_tap_outside: true,
           callback: async (response) => {
             try {
-              // Direct Google registration without requiring form input
+              // Try to register first
               const res = await API.post('/auth/google/register', {
                 idToken: response.credential,
                 role: "STUDENT"
               });
 
+              // New user registered successfully
               toast.success("Registration successful with Google! Please wait for admin approval.");
               navigate("/");
             } catch (err) {
               console.error("Google registration error:", err);
-              toast.error(err.response?.data?.message || "Google registration failed. Please try again.");
+              
+              // If user already exists (409), try to log them in instead
+              if (err.response?.status === 409) {
+                try {
+                  const loginRes = await API.post('/auth/google/login', {
+                    idToken: response.credential
+                  });
+
+                  const token = loginRes.data?.data?.token;
+                  const user = loginRes.data?.data?.user;
+
+                  if (token && user) {
+                    login(token, user);
+                    
+                    // Check if student is approved
+                    if (user.role === "STUDENT" && (!user.isApproved || user.isApproved === false)) {
+                      toast.info("You already have an account. Your admission is pending approval.");
+                      navigate("/");
+                    } else {
+                      toast.success("Welcome back! You've been logged in successfully.");
+                      const userRole = user.role || "STUDENT";
+                      if (userRole === "ADMIN") navigate("/admin/dashboard");
+                      else if (userRole === "TEACHER") navigate("/teacher/dashboard");
+                      else navigate("/student/dashboard");
+                    }
+                  }
+                } catch (loginErr) {
+                  console.error("Google login error:", loginErr);
+                  const loginErrorMsg = loginErr.response?.data?.message || "Failed to log in with Google.";
+                  
+                  // Check if it's a pending approval error
+                  if (loginErr.response?.status === 403) {
+                    toast.info("You already have an account. Your admission is pending approval.");
+                    navigate("/");
+                  } else {
+                    toast.error(loginErrorMsg);
+                  }
+                }
+              } else {
+                // Other registration errors
+                toast.error(err.response?.data?.message || "Google registration failed. Please try again.");
+              }
             }
           }
         });
@@ -112,7 +157,7 @@ const Register = () => {
     };
 
     loadGoogleScript();
-  }, [navigate]);
+  }, [navigate, login]);
 
   const onSubmit = async (data) => {
     // Check if passwords match (additional validation)
@@ -121,6 +166,7 @@ const Register = () => {
       return;
     }
 
+    setIsLoading(true);
     try {
       // Remove confirmPassword from data before sending to API
       const { confirmPassword, ...registerData } = data;
@@ -132,6 +178,8 @@ const Register = () => {
     } catch (error) {
       const errorMsg = error.response?.data?.message || "Error during registration. Please try again.";
       toast.error(errorMsg);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -292,9 +340,10 @@ const Register = () => {
 
           <button
             type="submit"
-            className="mt-8 w-full rounded-md bg-blue-600 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105"
+            disabled={isLoading}
+            className="mt-8 w-full rounded-md bg-blue-600 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            Create Account
+            {isLoading ? "Create Account..." : "Create Account"}
           </button>
 
           <p className="mt-6 text-center text-sm text-gray-600">

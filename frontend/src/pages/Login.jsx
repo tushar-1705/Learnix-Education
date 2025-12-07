@@ -23,9 +23,10 @@ const Login = () => {
 
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-  // ---------------- GOOGLE RESPONSE HANDLER ----------------
+  // ---------------- GOOGLE RESPONSE HANDLER ---------------- 
   const handleGoogleResponse = async (response) => {
     try {
+      // Try to log in first
       const res = await API.post("/auth/google/login", {
         idToken: response.credential,
         email: email || null
@@ -41,9 +42,37 @@ const Login = () => {
       else if (userRole === "TEACHER") navigate("/teacher/dashboard");
       else navigate("/student/dashboard");
 
+      toast.success("Welcome back! You've been logged in successfully.");
+
     } catch (err) {
-      console.error("Google login failed:", err);
-      toast.error("Google login failed. Please try again.");
+      console.error("Google login error:", err);
+      
+      // If user not found (404), try to register them instead
+      if (err.response?.status === 404) {
+        try {
+          const registerRes = await API.post('/auth/google/register', {
+            idToken: response.credential,
+            role: "STUDENT"
+          });
+
+          // New user registered successfully
+          toast.success("Registration successful with Google! Please wait for admin approval.");
+          navigate("/");
+        } catch (registerErr) {
+          console.error("Google registration error:", registerErr);
+          toast.error(registerErr.response?.data?.message || "Failed to register with Google. Please try again.");
+        }
+      } else {
+        // Other login errors
+        const errorStatus = err.response?.status;
+        const errorMessage = err.response?.data?.message || "";
+        
+        if (errorStatus === 403 && errorMessage.includes("pending approval")) {
+          toast.info("Your admission is pending approval. Please wait for admin approval.");
+        } else {
+          toast.error(errorMessage || "Google login failed. Please try again.");
+        }
+      }
     }
   };
 
@@ -151,9 +180,6 @@ const Login = () => {
   
     client.requestCode();
   };
-  
-
-  // ---------------- UI ----------------
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10">

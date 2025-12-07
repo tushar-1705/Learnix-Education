@@ -3,17 +3,15 @@ import { createContext, useContext, useState, useEffect } from "react";
 const SidebarContext = createContext();
 
 export const SidebarProvider = ({ children }) => {
-  // Default to closed on mobile, open on desktop
   const [isOpen, setIsOpen] = useState(() => {
     if (typeof window !== 'undefined') {
-      return window.innerWidth >= 1024; // lg breakpoint
+      return window.innerWidth >= 1024; 
     }
     return true;
   });
 
   useEffect(() => {
     const handleResize = () => {
-      // On mobile, close sidebar; on desktop, keep current state or open
       if (window.innerWidth < 1024) {
         setIsOpen(false);
       } else {

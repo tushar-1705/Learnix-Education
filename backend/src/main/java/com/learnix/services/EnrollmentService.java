@@ -10,8 +10,10 @@ import org.springframework.stereotype.Service;
 
 import com.learnix.models.Course;
 import com.learnix.models.Enrollment;
+import com.learnix.models.Payment;
 import com.learnix.models.Users;
 import com.learnix.repositories.EnrollmentRepository;
+import com.learnix.repositories.PaymentRepository;
 import com.learnix.repositories.UserRepository;
 import com.learnix.responseWrapper.MyResponseWrapper;
 
@@ -25,9 +27,12 @@ public class EnrollmentService {
     private EnrollmentRepository enrollmentRepository;
     
     @Autowired
+    private PaymentRepository paymentRepository;
+    
+    @Autowired
     MyResponseWrapper responseWrapper;
 
-    // View Enrolled Courses (only paid enrollments)
+    // View Enrolled Courses (only paid enrollments with verified successful payments)
     public ResponseEntity<?> getEnrolledCourses(String studentEmail) {
         Users student = userRepository.findByEmail(studentEmail);
         if (student == null || !student.getRole().equalsIgnoreCase("STUDENT")) {
@@ -35,9 +40,31 @@ public class EnrollmentService {
         }
 
         List<Enrollment> enrollments = enrollmentRepository.findByStudent(student);
-        // Filter only paid enrollments
+        
+        // Filter only enrollments that:
+        // 1. Are marked as paid (isPaid = true)
+        // 2. Have at least one successful payment record
         List<Course> courses = enrollments.stream()
-                .filter(e -> Boolean.TRUE.equals(e.getIsPaid()))
+                .filter(e -> {
+                    // First check if enrollment is marked as paid
+                    if (!Boolean.TRUE.equals(e.getIsPaid())) {
+                        return false;
+                    }
+                    
+                    // Verify there's actually a successful payment for this enrollment
+                    List<Payment> payments = paymentRepository.findByStudentAndCourse(e.getStudent(), e.getCourse());
+                    boolean hasSuccessfulPayment = payments.stream()
+                            .anyMatch(p -> "SUCCESS".equals(p.getStatus()));
+                    
+                    // If enrollment says paid but no successful payment exists, mark enrollment as unpaid
+                    if (!hasSuccessfulPayment) {
+                        e.setIsPaid(false);
+                        enrollmentRepository.save(e);
+                        return false;
+                    }
+                    
+                    return true;
+                })
                 .map(Enrollment::getCourse)
                 .collect(Collectors.toList());
 
