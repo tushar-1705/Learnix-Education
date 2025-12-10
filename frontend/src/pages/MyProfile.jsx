@@ -44,7 +44,6 @@ const MyProfile = () => {
       } else {
         setPhotoPreview(null);
       }
-      
       // Fetch student profile data if user is a student
       if (user.role === "STUDENT" && user.email) {
         API.get(`/student/profile`, { params: { email: user.email } })

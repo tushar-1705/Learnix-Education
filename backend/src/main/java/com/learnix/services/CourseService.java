@@ -15,13 +15,18 @@ import org.springframework.stereotype.Service;
 import com.learnix.models.Course;
 import com.learnix.models.CourseContent;
 import com.learnix.models.Users;
+import com.learnix.repositories.AnnouncementRepository;
+import com.learnix.repositories.AttendanceRepository;
 import com.learnix.repositories.CourseContentRepository;
 import com.learnix.repositories.CourseRepository;
 import com.learnix.repositories.EnrollmentRepository;
+import com.learnix.repositories.GradeRepository;
+import com.learnix.repositories.PaymentRepository;
 import com.learnix.repositories.UserRepository;
 import com.learnix.responseWrapper.MyResponseWrapper;
 import com.learnix.specification.CourseSpecification;
 import com.learnix.specification.SpecificationUtils;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @Service
 public class CourseService {
@@ -40,6 +45,18 @@ public class CourseService {
 
     @Autowired
     private com.learnix.repositories.CourseProgressRepository courseProgressRepository;
+
+    @Autowired
+    private PaymentRepository paymentRepository;
+
+    @Autowired
+    private AttendanceRepository attendanceRepository;
+
+    @Autowired
+    private GradeRepository gradeRepository;
+
+    @Autowired
+    private AnnouncementRepository announcementRepository;
 
     @Autowired
     private MyResponseWrapper responseWrapper;
@@ -115,14 +132,67 @@ public class CourseService {
 
     // Delete a course
     public ResponseEntity<?> deleteCourse(Long id) {
-        Optional<Course> courseOpt = courseRepository.findById(id);
+        try {
+            Optional<Course> courseOpt = courseRepository.findById(id);
 
-        if (courseOpt.isEmpty()) {
-        	return universalResponse("Course not found with ID: " + id, null, HttpStatus.NOT_FOUND); 
+            if (courseOpt.isEmpty()) {
+            	return universalResponse("Course not found with ID: " + id, null, HttpStatus.NOT_FOUND);
+            }
+
+            Course course = courseOpt.get();
+
+            // Delete course progress and contents
+            var progresses = courseProgressRepository.findByCourse(course);
+            if (!progresses.isEmpty()) {
+                courseProgressRepository.deleteAll(progresses);
+            }
+
+            var contents = courseContentRepository.findByCourseOrderByOrderIndexAsc(course);
+            if (!contents.isEmpty()) {
+                courseContentRepository.deleteAll(contents);
+            }
+
+            // Delete enrollments for this course
+            var enrollments = enrollmentRepository.findByCourse(course);
+            if (!enrollments.isEmpty()) {
+                enrollmentRepository.deleteAll(enrollments);
+            }
+
+            // Detach payments to preserve revenue history
+            var payments = paymentRepository.findByCourse(course);
+            if (!payments.isEmpty()) {
+                payments.forEach(p -> p.setCourse(null));
+                paymentRepository.saveAll(payments);
+            }
+
+            // Detach attendance records linked to this course
+            var attendanceRecords = attendanceRepository.findByCourse(course);
+            if (!attendanceRecords.isEmpty()) {
+                attendanceRecords.forEach(a -> a.setCourse(null));
+                attendanceRepository.saveAll(attendanceRecords);
+            }
+
+            // Detach grades linked to this course
+            var grades = gradeRepository.findByCourse(course);
+            if (!grades.isEmpty()) {
+                grades.forEach(g -> g.setCourse(null));
+                gradeRepository.saveAll(grades);
+            }
+
+            // Detach announcements linked to this course
+            var announcements = announcementRepository.findByCourse(course);
+            if (!announcements.isEmpty()) {
+                announcements.forEach(a -> a.setCourse(null));
+                announcementRepository.saveAll(announcements);
+            }
+
+            courseRepository.delete(course);
+            return universalResponse("Course deleted successfully with ID: " + id, null, HttpStatus.OK);
+        } catch (DataIntegrityViolationException ex) {
+            return universalResponse("Cannot delete course because related records reference it. Please remove linked records and try again.", null, HttpStatus.CONFLICT);
+        } catch (Exception ex) {
+            return universalResponse("Failed to delete course: " + ex.getMessage(), null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        courseRepository.deleteById(id);
-        return universalResponse("Course deleted successfully with ID: " + id, null, HttpStatus.OK);
     }
 
     // Get a course by ID

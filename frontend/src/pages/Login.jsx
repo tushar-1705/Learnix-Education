@@ -47,7 +47,6 @@ const Login = () => {
     } catch (err) {
       console.error("Google login error:", err);
       
-      // If user not found (404), try to register them instead
       if (err.response?.status === 404) {
         try {
           const registerRes = await API.post('/auth/google/register', {
@@ -55,7 +54,6 @@ const Login = () => {
             role: "STUDENT"
           });
 
-          // New user registered successfully
           toast.success("Registration successful with Google! Please wait for admin approval.");
           navigate("/");
         } catch (registerErr) {
@@ -63,7 +61,6 @@ const Login = () => {
           toast.error(registerErr.response?.data?.message || "Failed to register with Google. Please try again.");
         }
       } else {
-        // Other login errors
         const errorStatus = err.response?.status;
         const errorMessage = err.response?.data?.message || "";
         
@@ -76,24 +73,20 @@ const Login = () => {
     }
   };
 
-  // ---------------- LOAD GOOGLE SDK ----------------
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) return;
   
-    /* Load Google script */
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
     script.defer = true;
   
     script.onload = () => {
-      /* Initialize Google */
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleResponse,
       });
   
-      /* Render Google button */
       window.google.accounts.id.renderButton(
         document.getElementById("googleLoginBtn"),
         {
@@ -108,7 +101,6 @@ const Login = () => {
   }, []);
   
 
-  // ---------------- NORMAL EMAIL PASSWORD LOGIN ----------------
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
@@ -143,7 +135,6 @@ const Login = () => {
     }
   };
 
-  // ---------------- GOOGLE BUTTON CLICK ----------------
   const startGoogleLogin = () => {
     if (!window.google || !window.google.accounts) {
       toast.error("Google SDK not loaded yet. Please try again.");
@@ -156,7 +147,6 @@ const Login = () => {
       ux_mode: "popup",
       callback: async (response) => {
         try {
-          // Exchange auth code on backend
           const res = await API.post("/auth/google/login", {
             code: response.code
           });

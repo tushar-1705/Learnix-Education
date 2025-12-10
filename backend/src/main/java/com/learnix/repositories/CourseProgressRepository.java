@@ -17,5 +17,6 @@ public interface CourseProgressRepository extends JpaRepository<CourseProgress, 
     List<CourseProgress> findByStudentAndCourse(Users student, Course course);
     List<CourseProgress> findByStudentAndCourseAndIsCompleted(Users student, Course course, Boolean isCompleted);
     long countByStudentAndCourseAndIsCompleted(Users student, Course course, Boolean isCompleted);
+    List<CourseProgress> findByCourse(Course course);
 }
 

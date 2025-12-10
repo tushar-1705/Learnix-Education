@@ -134,7 +134,6 @@ const Navbar = () => {
                 alt={user.name}
                 className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-blue-500 shadow-md"
                 onError={(e) => {
-                  // Fallback to default icon if image fails to load
                   e.target.style.display = 'none';
                   e.target.nextSibling?.classList.remove('hidden');
                 }}

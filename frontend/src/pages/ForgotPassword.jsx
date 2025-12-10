@@ -143,7 +143,6 @@ const ForgotPassword = () => {
                     setIsLoading(true);
                     try {
                       await API.post("/auth/forgot-password", { email: userEmail });
-                      // Reset OTP field when resending
                       reset({ otp: "" });
                       toast.success("OTP has been resent to your email!");
                     } catch (err) {
