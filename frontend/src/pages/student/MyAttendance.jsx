@@ -28,8 +28,8 @@ const MyAttendance = () => {
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL"); // ALL, PRESENT, ABSENT
-  const [dateFilter, setDateFilter] = useState(""); // Filter by date
+  const [statusFilter, setStatusFilter] = useState("ALL"); 
+  const [dateFilter, setDateFilter] = useState(""); 
 
   useEffect(() => {
     const email = user?.email || localStorage.getItem("email");
@@ -61,7 +61,7 @@ const MyAttendance = () => {
       filtered = filtered.filter(record => record.status === statusFilter);
     }
 
-    // Filter by search term (teacher name or class name)
+    // Filter by search - teacher name or class name
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(record =>

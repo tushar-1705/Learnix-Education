@@ -29,7 +29,6 @@ const Notifications = () => {
     fetchNotifications();
   }, [user, navigate]);
 
-  // Mark all notifications as read when page loads (to update count in Navbar)
   useEffect(() => {
     if (notifications.length > 0) {
       const readNotifications = JSON.parse(

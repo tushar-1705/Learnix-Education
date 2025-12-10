@@ -17,7 +17,7 @@ const Courses = () => {
   const studentEmail = localStorage.getItem("email");
 
   useEffect(() => {
-    // Fetch all courses and student's enrolled courses in parallel
+    // Fetch all courses and student's enrolled courses 
     Promise.all([
       API.get("/courses/all"),
       studentEmail ? API.get(`/student/my-courses?email=${studentEmail}`) : Promise.resolve({ data: { data: [] } })

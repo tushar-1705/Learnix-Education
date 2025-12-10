@@ -50,13 +50,13 @@ function App() {
           }}
         >
         <Routes>
-          {/* ---------- PUBLIC ROUTES ---------- */}
+          {/* PUBLIC ROUTES */}
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* ---------- STUDENT ROUTES ---------- */}
+          {/* STUDENT ROUTES */}
           <Route
             path="/student/dashboard"
             element={
@@ -146,7 +146,7 @@ function App() {
             }
           />
 
-          {/* ---------- ADMIN ROUTES ---------- */}
+          {/* ADMIN ROUTES */}
           <Route
             path="/admin/dashboard"
             element={
@@ -244,7 +244,7 @@ function App() {
             }
           />
 
-          {/* ---------- TEACHER ROUTES ---------- */}
+          {/* TEACHER ROUTES */}
           <Route
             path="/teacher/dashboard"
             element={

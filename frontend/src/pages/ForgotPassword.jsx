@@ -22,7 +22,7 @@ const ForgotPassword = () => {
     try {
       await API.post("/auth/forgot-password", { email: data.email });
       setUserEmail(data.email);
-      // Reset form to clear email field before showing OTP input
+      // Reset the form to clear email field before showing OTP input
       reset();
       setOtpSent(true);
       toast.success("OTP has been sent to your email!");

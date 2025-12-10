@@ -36,10 +36,8 @@ const Register = () => {
 
     const loadGoogleScript = async () => {
       if (!window.google) {
-        // Check if script already exists in the DOM
         const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
         if (existingScript) {
-          // Script exists but not loaded yet, wait for it
           existingScript.addEventListener('load', initializeGoogleSignIn);
           existingScript.addEventListener('error', handleScriptError);
           return;
@@ -55,7 +53,6 @@ const Register = () => {
         
         document.body.appendChild(script);
       } else {
-        // Google script already loaded, just initialize
         initializeGoogleSignIn();
       }
     };
@@ -79,19 +76,18 @@ const Register = () => {
           cancel_on_tap_outside: true,
           callback: async (response) => {
             try {
-              // Try to register first
+              // register first
               const res = await API.post('/auth/google/register', {
                 idToken: response.credential,
                 role: "STUDENT"
               });
 
-              // New user registered successfully
               toast.success("Registration successful with Google! Please wait for admin approval.");
               navigate("/");
             } catch (err) {
               console.error("Google registration error:", err);
               
-              // If user already exists (409), try to log them in instead
+              // If user already exists, try to log them 
               if (err.response?.status === 409) {
                 try {
                   const loginRes = await API.post('/auth/google/login', {
@@ -129,7 +125,6 @@ const Register = () => {
                   }
                 }
               } else {
-                // Other registration errors
                 toast.error(err.response?.data?.message || "Google registration failed. Please try again.");
               }
             }
@@ -148,7 +143,6 @@ const Register = () => {
             type: 'standard'
           });
         }
-        // Disable auto-select to prevent personalization
         window.google.accounts.id.disableAutoSelect();
       } catch (error) {
         console.error("Error initializing Google Sign-In:", error);
@@ -160,7 +154,6 @@ const Register = () => {
   }, [navigate, login]);
 
   const onSubmit = async (data) => {
-    // Check if passwords match (additional validation)
     if (data.password !== data.confirmPassword) {
       toast.error("Passwords do not match. Please try again.");
       return;
@@ -168,7 +161,6 @@ const Register = () => {
 
     setIsLoading(true);
     try {
-      // Remove confirmPassword from data before sending to API
       const { confirmPassword, ...registerData } = data;
       // Register student only
       await API.post("/auth/register", { ...registerData, role: "STUDENT" });

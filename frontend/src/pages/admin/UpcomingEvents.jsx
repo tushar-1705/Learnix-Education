@@ -12,7 +12,7 @@ const UpcomingEvents = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [editing, setEditing] = useState(null); // event being edited
+  const [editing, setEditing] = useState(null);
 
   const {
     register,

@@ -31,7 +31,7 @@ const MyCourses = () => {
       setMyCourses(res.data?.data || res.data || []);
     })
     .catch((err) => {
-      console.error("❌ Error loading courses:", err);
+      console.error("Error loading courses:", err);
       toast.error("Error loading courses");
     })
     .finally(() => {
@@ -42,10 +42,8 @@ const MyCourses = () => {
   useEffect(() => {
     loadCourses();
     
-    // Listen for page visibility changes (refresh when returning from payment)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // Small delay to ensure backend has processed any recent payments
         setTimeout(() => {
           loadCourses();
         }, 300);

@@ -94,7 +94,7 @@ const Navbar = () => {
         </div>
       )}
       
-      {/* Spacer for desktop - pushes content to right */}
+      {/* Spacer for desktop */}
       <div className="hidden lg:block flex-1"></div>
       
       <div className="flex items-center gap-2 sm:gap-3 md:gap-4 ml-auto lg:ml-0">

@@ -20,7 +20,7 @@ const CourseDetails = () => {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
 
-  // Refresh course data (useful after payment)
+  // Refresh course data after payment
   const refreshCourseData = async () => {
     const email = user?.email || localStorage.getItem("email");
     const role = user?.role || localStorage.getItem("role");
@@ -48,7 +48,7 @@ const CourseDetails = () => {
       console.log(`🔄 Refresh - Payment status: ${isPaid}`);
       setIsEnrolled(isPaid);
       
-      // Always try to fetch contents - backend will verify enrollment
+      // fetch contents 
       try {
         console.log(`🔄 Refresh - Fetching contents...`);
         const contentsRes = await API.get(`/courses/${id}/contents?email=${email}`);
@@ -73,14 +73,14 @@ const CourseDetails = () => {
           toast.info("You are not enrolled in this course yet.");
         }
       } catch (contentsErr) {
-        console.error("🔄 Refresh - Error fetching contents:", contentsErr);
+        console.error("Refresh - Error fetching contents:", contentsErr);
         console.error("Response status:", contentsErr.response?.status);
         console.error("Response data:", contentsErr.response?.data);
         
         if (contentsErr.response?.status === 403) {
           if (isPaid) {
             toast.error("Enrollment mismatch detected. Please contact support or try again in a moment.");
-            console.error("🚨 MISMATCH: Payment check says paid but content access denied!");
+            console.error("MISMATCH: Payment check says paid but content access denied!");
           } else {
             toast.warning("You need to complete payment to access course content.");
           }
@@ -100,7 +100,6 @@ const CourseDetails = () => {
   };
 
   useEffect(() => {
-    // Load Razorpay script
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
@@ -147,7 +146,7 @@ const CourseDetails = () => {
               const fetchedContents = contentsRes?.data?.data || contentsRes?.data || [];
               setContents(fetchedContents);
               
-              // Check if any content is actually unlocked (student is enrolled)
+              // Check if any content is actually unlocked means student is enrolled
               const hasUnlockedContent = fetchedContents.some(item => item.isUnlocked !== false);
               
               if (hasUnlockedContent) {
@@ -156,24 +155,24 @@ const CourseDetails = () => {
               } else if (fetchedContents.length > 0) {
                 // Contents exist but all are locked - student is NOT enrolled
                 setIsEnrolled(false);
-                console.warn("⚠️ Contents fetched but all locked - student not enrolled");
+                console.warn("Contents fetched but all locked - student not enrolled");
               } else if (isPaid) {
                 // Enrollment check says paid but no contents - might be empty course
-                console.warn("⚠️ Enrollment confirmed but course has no content");
+                console.warn("Enrollment confirmed but course has no content");
               } else {
                 // Not enrolled
                 setIsEnrolled(false);
               }
             } catch (contentsErr) {
-              console.error("❌ Error fetching contents:", contentsErr);
+              console.error("Error fetching contents:", contentsErr);
               console.error("Response status:", contentsErr.response?.status);
               console.error("Response data:", contentsErr.response?.data);
               
               if (contentsErr.response?.status === 403) {
-                console.warn("⚠️ Access denied (403). Enrollment check result:", isPaid);
+                console.warn("Access denied. Enrollment check result:", isPaid);
                 // If enrollment check says paid but we get 403, there's a mismatch
                 if (isPaid) {
-                  console.error("🚨 MISMATCH: Payment check says paid but content access denied!");
+                  console.error("MISMATCH: Payment check says paid but content access denied!");
                   toast.warning("Enrollment issue detected. Please refresh the page or contact support.");
                 }
                 setContents([]);
@@ -183,7 +182,7 @@ const CourseDetails = () => {
               }
             }
           } catch (checkErr) {
-            console.error("❌ Enrollment check error:", checkErr);
+            console.error("Enrollment check error:", checkErr);
             setIsEnrolled(false);
             // Try to fetch contents anyway to see what happens
             try {
@@ -205,7 +204,6 @@ const CourseDetails = () => {
             }
           }
         } else {
-          // For non-students or when no email, fetch without email
           try {
             const contentsRes = await API.get(`/courses/${id}/contents`);
             setContents(contentsRes?.data?.data || contentsRes?.data || []);
@@ -224,15 +222,12 @@ const CourseDetails = () => {
     
     loadCourseData();
 
-    // Listen for page visibility changes (useful when returning from payment)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         const email = user?.email || localStorage.getItem("email");
         const role = user?.role || localStorage.getItem("role");
-        // Check if payment was just completed
         const paymentCompleted = localStorage.getItem('paymentCompleted');
         if (email && role && role.toUpperCase() === "STUDENT" && paymentCompleted) {
-          // Small delay to ensure backend has processed payment
           setTimeout(() => {
             refreshCourseData();
           }, 500);
@@ -256,7 +251,6 @@ const CourseDetails = () => {
 
     setIsPaymentLoading(true);
     try {
-      // Create payment order
       const orderRes = await API.post(`/payment/create-order?courseId=${id}&email=${email}`);
       const orderData = orderRes.data?.data;
 
@@ -268,14 +262,13 @@ const CourseDetails = () => {
 
       const options = {
         key: orderData.keyId,
-        amount: orderData.amount * 100, // Convert to paise
+        amount: orderData.amount * 100, 
         currency: orderData.currency,
         name: "Learnix",
         description: `Payment for ${course?.title}`,
         order_id: orderData.orderId,
         handler: async function (response) {
           try {
-            // Verify payment
             await API.post(`/payment/verify`, null, {
               params: {
                 razorpayOrderId: response.razorpay_order_id,
@@ -285,7 +278,6 @@ const CourseDetails = () => {
             });
             toast.success("Payment successful! Enrollment confirmed. Loading course content...");
             
-            // Wait a moment for backend to save enrollment
             await new Promise(resolve => setTimeout(resolve, 500));
             
             // Re-check enrollment status
@@ -311,7 +303,7 @@ const CourseDetails = () => {
               console.error("Error refreshing enrollment after payment:", refreshErr);
             }
             
-            // Redirect to My Courses page after a short delay
+            // Redirect to My Courses page 
             setTimeout(() => {
               navigate("/student/my-courses");
             }, 2000);
@@ -437,7 +429,7 @@ const CourseDetails = () => {
                   ) : (
                     <div className="space-y-3">
                       {contents.map((item, index) => {
-                        const isUnlocked = item.isUnlocked !== false; // Default to true if not specified (for backward compatibility)
+                        const isUnlocked = item.isUnlocked !== false; 
                         const isWatched = item.isWatched === true;
                         const isLocked = !isUnlocked;
                         
@@ -514,7 +506,6 @@ const CourseDetails = () => {
               url={player.url} 
               onClose={() => {
                 setPlayer({ open: false, url: "" });
-                // Refresh content to update unlock status after closing video
                 setTimeout(() => {
                   refreshCourseData();
                 }, 500);
@@ -528,7 +519,6 @@ const CourseDetails = () => {
 };
 
 // Fullscreen video overlay
-// eslint-disable-next-line
 const VideoOverlay = ({ open, url, onClose }) => {
   if (!open) return null;
   return (
@@ -547,7 +537,7 @@ const VideoOverlay = ({ open, url, onClose }) => {
   );
 };
 
-// Convert watch/short URLs to embeddable ones (YouTube, Google Drive)
+// Convert watch/short URLs to embeddable ones for YouTube and Google Drive
 function normalizeVideoUrl(rawUrl) {
   if (!rawUrl) return rawUrl;
   try {

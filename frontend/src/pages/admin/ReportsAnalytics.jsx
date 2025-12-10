@@ -97,7 +97,6 @@ const ReportsAnalytics = () => {
     const pageHeight = doc.internal.pageSize.getHeight();
     let yPosition = 20;
 
-    // Helper function to add a new page if needed
     const checkPageBreak = (requiredSpace = 10) => {
       if (yPosition + requiredSpace > pageHeight - 20) {
         doc.addPage();

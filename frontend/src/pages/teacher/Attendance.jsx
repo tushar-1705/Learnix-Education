@@ -87,7 +87,6 @@ const Attendance = () => {
 
     setSubmitting(true);
     try {
-      // Only include students whose attendance status has been explicitly set by the teacher
       const entries = students
         .filter((s) => attendanceByStudent[s.id] !== undefined && attendanceByStudent[s.id] !== null)
         .map((s) => ({
@@ -107,7 +106,6 @@ const Attendance = () => {
         entries 
       });
       toast.success("Attendance submitted successfully.");
-      // Reset selections so buttons return to normal state
       setAttendanceByStudent({});
     } catch (e) {
       const errorMsg = e.response?.data?.message || "Failed to submit attendance.";

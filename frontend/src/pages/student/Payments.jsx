@@ -23,11 +23,10 @@ const Payments = () => {
   const navigate = useNavigate();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("ALL"); // ALL, PENDING, PAID, OVERDUE
+  const [filter, setFilter] = useState("ALL"); 
   const [processingPaymentId, setProcessingPaymentId] = useState(null);
 
   useEffect(() => {
-    // Load Razorpay script
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
@@ -53,7 +52,6 @@ const Payments = () => {
       const res = await API.get("/student/payments", { params: { email } });
       if (res.data?.data) {
         setPayments(res.data.data.payments || []);
-        // Update statistics if provided
         if (res.data.data.statistics) {
           // Statistics are calculated from payments, so we'll use the payments array
         }
@@ -186,14 +184,13 @@ const Payments = () => {
 
       const options = {
         key: orderData.keyId,
-        amount: orderData.amount * 100, // Convert to paise
+        amount: orderData.amount * 100, 
         currency: orderData.currency,
         name: "Learnix",
         description: `Payment for ${payment.course?.title || "Course"}`,
         order_id: orderData.orderId,
         handler: async function (response) {
           try {
-            // Verify payment
             await API.post(`/payment/verify`, null, {
               params: {
                 razorpayOrderId: response.razorpay_order_id,
@@ -204,25 +201,21 @@ const Payments = () => {
             
             toast.success("Payment successful! Redirecting to your courses...");
             
-            // Refresh payments list
             const email = user?.email || localStorage.getItem("email");
             if (email) {
               await fetchPayments(email);
             }
             
-            // Set flag in localStorage to trigger dashboard refresh
             const timestamp = Date.now();
             localStorage.setItem('paymentCompleted', timestamp.toString());
             localStorage.setItem('paymentCompletedTime', timestamp.toString());
             
-            // Dispatch custom event to notify dashboard to refresh pending payments count
             window.dispatchEvent(new CustomEvent('paymentCompleted', { 
               detail: { timestamp: timestamp },
               bubbles: true,
               cancelable: true
             }));
             
-            // Redirect to My Courses page after a short delay
             setTimeout(() => {
               navigate("/student/my-courses");
             }, 1500);

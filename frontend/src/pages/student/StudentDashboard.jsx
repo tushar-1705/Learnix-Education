@@ -108,7 +108,6 @@ const StudentDashboard = () => {
         }
       })
       .catch((error) => {
-        // If current user isn't a student (e.g., ADMIN previewing), fall back to admin public list
         if (error?.response?.status === 401 || error?.response?.status === 403) {
           API.get('/admin/events', { params: { onlyFuture: true } })
             .then(res => {
@@ -117,7 +116,6 @@ const StudentDashboard = () => {
             })
             .catch(() => setEvents([]));
         } else {
-          // Ensure events is always an array even on error
           setEvents([]);
         }
       });

@@ -23,7 +23,7 @@ const Login = () => {
 
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-  // ---------------- GOOGLE RESPONSE HANDLER ---------------- 
+  // GOOGLE RESPONSE HANDLER
   const handleGoogleResponse = async (response) => {
     try {
       // Try to log in first

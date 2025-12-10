@@ -222,7 +222,7 @@ const Students = () => {
         </div>
       </div>
   
-      {/* ✅ Student Details Modal INSIDE return */}
+      {/* Student Details Modal */}
       {selectedStudent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-lg mx-4">

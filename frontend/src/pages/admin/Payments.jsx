@@ -94,7 +94,7 @@ const Payments = () => {
     return () => {
       mounted = false;
     };
-  }, []); // initial load
+  }, []); 
 
   useEffect(() => {
     if (!initialized) return;

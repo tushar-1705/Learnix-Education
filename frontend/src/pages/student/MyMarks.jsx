@@ -26,7 +26,7 @@ const MyMarks = () => {
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [subjectFilter, setSubjectFilter] = useState("ALL"); // ALL or specific subject
+  const [subjectFilter, setSubjectFilter] = useState("ALL"); 
 
   useEffect(() => {
     const email = user?.email || localStorage.getItem("email");

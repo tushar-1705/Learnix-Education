@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 const CourseCard = ({ course, onEnroll, isEnrolled = false }) => {
   const navigate = useNavigate();
-  const thumbnail = course.thumbnail || null; // optional future field
+  const thumbnail = course.thumbnail || null; 
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 group flex flex-col justify-between transform hover:-translate-y-1">
       {/* Image */}

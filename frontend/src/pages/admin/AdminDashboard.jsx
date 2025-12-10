@@ -46,7 +46,6 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Chart data from backend
   const [attendanceData, setAttendanceData] = useState([]);
   const [revenueData, setRevenueData] = useState([]);
   const [courseDistributionData, setCourseDistributionData] = useState([]);
